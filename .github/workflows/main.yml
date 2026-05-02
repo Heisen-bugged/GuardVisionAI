@@ -42,7 +42,7 @@ jobs:
       #   run: pnpm tsc --noEmit
 
   deploy-production:
-    name: Deploy to Production (GCP)
+    name: Deploy to Production (Vercel & GCP)
     runs-on: ubuntu-latest
     needs: validate
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -54,6 +54,30 @@ jobs:
         uses: pnpm/action-setup@v3
         with:
           version: 9
+
+      # 1. Setup Vercel Project (Connect Git & Env Vars)
+      - name: Install Vercel CLI
+        run: pnpm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Link Git Repository to Vercel
+        run: vercel git connect github Heisen-bugged/GuardVisionAI --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+
+      - name: Add PocketBase URL to Vercel Environment
+        run: |
+          echo -n "http://130.61.153.164:8090" > pb_url.txt
+          vercel env rm NEXT_PUBLIC_POCKETBASE_URL production -y --token=${{ secrets.VERCEL_TOKEN }} || true
+          vercel env add NEXT_PUBLIC_POCKETBASE_URL production --token=${{ secrets.VERCEL_TOKEN }} < pb_url.txt
+          vercel env rm POCKETBASE_URL production -y --token=${{ secrets.VERCEL_TOKEN }} || true
+          vercel env add POCKETBASE_URL production --token=${{ secrets.VERCEL_TOKEN }} < pb_url.txt
+
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --build-env NEXT_PUBLIC_POCKETBASE_URL="http://130.61.153.164:8090"
+
+      - name: Deploy Project Artifacts to Vercel
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       # 2. Deploy Cloud Functions to GCP
       - name: Authenticate to Google Cloud
