@@ -1,0 +1,22 @@
+{
+  "name": "process-asset",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "functions-framework --source=build/src/ --target=processAsset"
+  },
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.0.0",
+    "@google-cloud/pubsub": "^4.0.0",
+    "@google-cloud/storage": "^7.0.0",
+    "@google-cloud/video-intelligence": "^5.0.0",
+    "blockhash-core": "^0.1.0",
+    "pocketbase": "^0.21.1",
+    "sharp": "^0.33.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/pocketbase';
-import { uploadToStorage } from '@/lib/storage';
-import { processAsset } from '@/lib/processing';
+import { Storage } from '@google-cloud/storage';
+import { PubSub } from '@google-cloud/pubsub';
+
+const storage = new Storage();
+const pubsub = new PubSub();
+const BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'daps-media-default';
+const TOPIC_NAME = process.env.PUBSUB_ASSET_TOPIC || 'asset-uploaded-topic';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,59 +23,56 @@ export async function POST(req: NextRequest) {
     }
 
     const pb = await getAdminClient();
-
-    // 1. Create initial record in PocketBase with the original file
-    const pbFormData = new FormData();
-    pbFormData.append('org_id', orgId);
-    pbFormData.append('title', title);
-    pbFormData.append('asset_type', assetType);
-    pbFormData.append('keywords', JSON.stringify(keywords));
-    pbFormData.append('licensed_domains', JSON.stringify(licensedDomains));
-    pbFormData.append('status', 'processing');
-    
-    // Attach the file directly to PocketBase
-    pbFormData.append('original_file', file);
-
-    const record = await pb.collection('assets').create(pbFormData);
-
-    // Set the backward-compatible URL
-    const originalUrl = `${process.env.NEXT_PUBLIC_POCKETBASE_URL}/api/files/assets/${record.id}/${record.original_file}`;
-    await pb.collection('assets').update(record.id, { gcs_original_url: originalUrl });
-
-    // 2. Trigger processing
     const buffer = Buffer.from(await file.arrayBuffer());
-    processAsset(record.id, buffer, assetType === 'video' ? 'video' : 'image', file.type)
-      .then(async (results) => {
-        // results may contain watermarked_file Blob, embedding, etc.
-        const updateData = new FormData();
-        
-        if (results.watermarkedBlob) {
-          updateData.append('watermarked_file', results.watermarkedBlob, `watermarked-${record.id}.${assetType === 'image' ? 'jpg' : 'mp4'}`);
-        }
-        
-        updateData.append('phash', results.phash || '');
-        updateData.append('embedding', JSON.stringify(results.embedding || []));
-        updateData.append('status', 'active');
 
-        const updatedRecord = await pb.collection('assets').update(record.id, updateData);
-        
-        // Also set the backward-compatible watermarked URL
-        if (updatedRecord.watermarked_file) {
-          const watermarkedUrl = `${process.env.NEXT_PUBLIC_POCKETBASE_URL}/api/files/assets/${record.id}/${updatedRecord.watermarked_file}`;
-          await pb.collection('assets').update(record.id, { gcs_watermarked_url: watermarkedUrl });
-        }
-      })
-      .catch(async (err) => {
-        await pb.collection('assets').update(record.id, {
-          status: 'error',
-          metadata: { error: err.message }
-        });
-      });
+    // 1. Create a dummy initial record in PocketBase to get an ID
+    const record = await pb.collection('assets').create({
+      org_id: orgId,
+      title: title,
+      asset_type: assetType,
+      keywords: keywords,
+      licensed_domains: licensedDomains,
+      status: 'uploading'
+    });
 
-    return NextResponse.json(record, { status: 201 });
+    // 2. Upload file directly to GCS
+    const extension = file.name.split('.').pop();
+    const gcsFileName = \`originals/\${record.id}.\${extension}\`;
+    const gcsFile = storage.bucket(BUCKET_NAME).file(gcsFileName);
+    
+    await gcsFile.save(buffer, {
+      contentType: file.type,
+      resumable: false // Set to true for very large files, false for faster small uploads
+    });
+
+    const gcsUri = \`gs://\${BUCKET_NAME}/\${gcsFileName}\`;
+    const publicUrl = \`https://storage.googleapis.com/\${BUCKET_NAME}/\${gcsFileName}\`;
+
+    // 3. Update PocketBase with the GCS URLs
+    await pb.collection('assets').update(record.id, { 
+      gcs_original_url: publicUrl,
+      status: 'processing' 
+    });
+
+    // 4. Publish to Pub/Sub to trigger asynchronous processing
+    const messagePayload = {
+      assetId: record.id,
+      gcsUri: gcsUri,
+      assetType: assetType,
+      orgId: orgId
+    };
+
+    const dataBuffer = Buffer.from(JSON.stringify(messagePayload));
+    await pubsub.topic(TOPIC_NAME).publishMessage({ data: dataBuffer });
+
+    console.log(\`Asset \${record.id} uploaded to GCS and queued for processing.\`);
+
+    // Return 201 immediately! Processing happens in the background.
+    return NextResponse.json({ ...record, status: 'processing', gcs_original_url: publicUrl }, { status: 201 });
+
   } catch (error: unknown) {
     const err = error as Error;
-    console.error('Error in /api/assets:', err);
+    console.error('Error in /api/assets POST:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -88,7 +90,7 @@ export async function GET(req: NextRequest) {
 
     const pb = await getAdminClient();
     const resultList = await pb.collection('assets').getList(page, limit, {
-      filter: `org_id = "${orgId}"`,
+      filter: \`org_id = "\${orgId}"\`,
       sort: '-created',
     });
 
