@@ -84,11 +84,13 @@ cloudEvent('processAsset', async (event: CloudEvent<PubSubMessage>) => {
       // Trigger Video Intelligence API
       const request = {
         inputUri: gcsUri,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         features: ['SHOT_CHANGE_DETECTION', 'LABEL_DETECTION'] as any,
         outputUri: `gs://${bucketName}/video-analysis/${assetId}.json`
       };
 
       // We don't await the result. GCP Video Intelligence will save to outputUri
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const [operation] = await videoClient.annotateVideo(request) as any;
       
       console.log(`Started video annotation for ${assetId}. Operation name: ${operation.name}`);

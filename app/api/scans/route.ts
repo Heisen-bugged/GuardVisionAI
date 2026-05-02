@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/pocketbase';
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const pb = await getAdminClient();
     const resultList = await pb.collection('detection_jobs').getList(1, 50, {

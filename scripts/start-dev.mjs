@@ -1,6 +1,5 @@
 import { spawn, execSync } from 'child_process';
 import fs from 'fs';
-import path from 'path';
 import os from 'os';
 
 const VERSION = '0.24.4';
@@ -36,8 +35,8 @@ if (!fs.existsSync(pbExe)) {
     }
     
     console.log('✅ PocketBase successfully installed!');
-  } catch (e) {
-    console.error('❌ Failed to download PocketBase. Please download it manually from https://pocketbase.io/docs/', e);
+  } catch (_e) {
+    console.error('❌ Failed to download PocketBase. Please download it manually from https://pocketbase.io/docs/');
     process.exit(1);
   }
 }
@@ -58,9 +57,9 @@ try {
   const exeCmd = os.platform() === 'win32' ? `.\\${pbExe}` : `./${pbExe}`;
   execSync(`${exeCmd} superuser upsert ${email} ${password}`, { stdio: 'ignore' });
   console.log('✅ Superuser ready.');
-} catch (e) {
-  // Ignore errors
-}
+  } catch (_e) {
+    // Ignore errors
+  }
 
 // 3. Start PocketBase
 console.log('\n🚀 Starting PocketBase...');
@@ -75,7 +74,7 @@ setTimeout(() => {
   try {
     execSync('node --env-file=.env scripts/seed-pb.mjs', { stdio: 'ignore' });
     console.log('✅ Database schema verified/seeded.');
-  } catch (e) {
+  } catch (_e) {
     // Already seeded or error
   }
 }, 3000);

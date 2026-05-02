@@ -23,7 +23,7 @@ const C = {
 const border = { style: BorderStyle.SINGLE, size: 1, color: C.border };
 const borders = { top: border, bottom: border, left: border, right: border };
 const noBorder = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
-const noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder };
+const _noBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder };
 
 function h1(text) {
   return new Paragraph({
@@ -57,7 +57,7 @@ function p(text, opts = {}) {
   });
 }
 
-function pMixed(runs, spacing = {}) {
+function _pMixed(runs, spacing = {}) {
   return new Paragraph({
     spacing: { before: 80, after: 120, ...spacing },
     children: runs.map(r => new TextRun({ font: "Arial", size: 22, color: C.dark, ...r }))
@@ -176,7 +176,7 @@ function apiTable(rows, headers = ["Parameter", "Type", "Required", "Description
 }
 
 function wideTable(rows, headers, colWidths) {
-  const total = colWidths.reduce((a, b) => a + b, 0);
+  const _total = colWidths.reduce((a, b) => a + b, 0);
   return new Table({
     width: { size: 9360, type: WidthType.DXA },
     columnWidths: colWidths,

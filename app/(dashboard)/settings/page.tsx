@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,9 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Settings, 
-  Shield, 
   Key, 
-  Globe, 
   Bell, 
   Save, 
   ShieldAlert,
@@ -19,8 +17,6 @@ import {
 } from 'lucide-react';
 
 export default function SettingsPage() {
-  const [loading, setLoading] = useState(false);
-
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div>
