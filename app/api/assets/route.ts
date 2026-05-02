@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Upload file directly to GCS
     const extension = file.name.split('.').pop();
-    const gcsFileName = \`originals/\${record.id}.\${extension}\`;
+    const gcsFileName = `originals/${record.id}.${extension}`;
     const gcsFile = storage.bucket(BUCKET_NAME).file(gcsFileName);
     
     await gcsFile.save(buffer, {
@@ -45,8 +45,8 @@ export async function POST(req: NextRequest) {
       resumable: false // Set to true for very large files, false for faster small uploads
     });
 
-    const gcsUri = \`gs://\${BUCKET_NAME}/\${gcsFileName}\`;
-    const publicUrl = \`https://storage.googleapis.com/\${BUCKET_NAME}/\${gcsFileName}\`;
+    const gcsUri = `gs://${BUCKET_NAME}/${gcsFileName}`;
+    const publicUrl = `https://storage.googleapis.com/${BUCKET_NAME}/${gcsFileName}`;
 
     // 3. Update PocketBase with the GCS URLs
     await pb.collection('assets').update(record.id, { 
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     const dataBuffer = Buffer.from(JSON.stringify(messagePayload));
     await pubsub.topic(TOPIC_NAME).publishMessage({ data: dataBuffer });
 
-    console.log(\`Asset \${record.id} uploaded to GCS and queued for processing.\`);
+    console.log(`Asset ${record.id} uploaded to GCS and queued for processing.`);
 
     // Return 201 immediately! Processing happens in the background.
     return NextResponse.json({ ...record, status: 'processing', gcs_original_url: publicUrl }, { status: 201 });
@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
 
     const pb = await getAdminClient();
     const resultList = await pb.collection('assets').getList(page, limit, {
-      filter: \`org_id = "\${orgId}"\`,
+      filter: `org_id = "${orgId}"`,
       sort: '-created',
     });
 

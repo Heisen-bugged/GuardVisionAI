@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -12,17 +12,23 @@ import {
   XCircle, 
   ArrowLeft,
   FileText,
-  Mail,
-  MoreHorizontal,
-  Fingerprint,
   ShieldCheck,
   Globe
 } from 'lucide-react';
 import Link from 'next/link';
 
+interface Violation {
+  id: string;
+  created: string;
+  source_url: string;
+  platform: string;
+  match_type: string;
+  confidence: number;
+}
+
 export default function ViolationDetailPage() {
   const { id } = useParams();
-  const [violation, setViolation] = useState<any>(null);
+  const [violation, setViolation] = useState<Violation | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,7 +36,7 @@ export default function ViolationDetailPage() {
       try {
         const res = await fetch(`/api/violations`);
         const data = await res.json();
-        const found = data.items.find((v: any) => v.id === id);
+        const found = data.items.find((v: Violation) => v.id === id);
         setViolation(found);
       } catch (error) {
         console.error('Error fetching violation:', error);

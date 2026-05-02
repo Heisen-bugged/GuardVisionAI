@@ -205,7 +205,7 @@ export default function NewAssetPage() {
             <div className="space-y-2">
               <CardTitle className="text-2xl text-emerald-500">Registration Initiated!</CardTitle>
               <CardDescription className="text-slate-400 max-w-sm mx-auto">
-                Your asset "{title}" is now being watermarked and fingerprinted. 
+                Your asset &quot;{title}&quot; is now being watermarked and fingerprinted. 
                 It will appear in your library shortly.
               </CardDescription>
             </div>

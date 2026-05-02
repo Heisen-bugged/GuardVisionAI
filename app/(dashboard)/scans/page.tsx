@@ -13,11 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   History, 
-  CheckCircle2, 
-  XCircle, 
   Loader2, 
-  Search,
-  ExternalLink,
   Shield
 } from 'lucide-react';
 
@@ -26,7 +22,9 @@ interface ScanJob {
   asset_id: string;
   status: 'pending' | 'running' | 'completed' | 'failed';
   type: 'youtube' | 'web' | 'comprehensive';
-  results: any;
+  results?: {
+    violations_found?: number;
+  };
   created: string;
   expand?: {
     asset_id: {
@@ -133,7 +131,7 @@ export default function ScansPage() {
                       {getStatusBadge(job.status)}
                     </TableCell>
                     <TableCell>
-                      <span className={job.results?.violations_found > 0 ? 'text-red-400 font-bold' : 'text-slate-500'}>
+                      <span className={(job.results?.violations_found ?? 0) > 0 ? 'text-red-400 font-bold' : 'text-slate-500'}>
                         {job.results?.violations_found || 0} violations
                       </span>
                     </TableCell>

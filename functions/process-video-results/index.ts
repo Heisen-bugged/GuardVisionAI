@@ -1,6 +1,29 @@
-import functions from '@google-cloud/functions-framework';
+import { CloudEvent, cloudEvent } from '@google-cloud/functions-framework';
 import { Storage } from '@google-cloud/storage';
 import PocketBase from 'pocketbase';
+
+interface PubSubMessage {
+  data: string;
+}
+
+interface GCSNotificationPayload {
+  bucket: string;
+  name: string;
+}
+
+interface VideoAnnotationResults {
+  annotationResults?: Array<{
+    shotAnnotations?: Array<{
+      startTimeOffset?: { seconds?: string | number; nanos?: number };
+      endTimeOffset?: { seconds?: string | number; nanos?: number };
+    }>;
+    segmentLabelAnnotations?: Array<{
+      entity: {
+        description: string;
+      };
+    }>;
+  }>;
+}
 
 const storage = new Storage();
 const pb = new PocketBase(process.env.POCKETBASE_URL || 'http://localhost:8090');
@@ -15,22 +38,22 @@ async function getAdminClient() {
   return pb;
 }
 
-functions.cloudEvent('processVideoResults', async (cloudEvent) => {
-  const base64Data = (cloudEvent.data as any).message.data;
-  const messageStr = Buffer.from(base64Data, 'base64').toString();
-  
-  // This expects a Pub/Sub message triggered by GCS object finalization,
-  // or a custom message passed from the Video Intelligence API completion.
-  // For simplicity, assuming the payload has bucket/name if from GCS notification.
-  let payload: any;
-  try {
-    payload = JSON.parse(messageStr);
-  } catch (e) {
-    console.error("Invalid JSON payload", messageStr);
+cloudEvent('processVideoResults', async (event: CloudEvent<PubSubMessage>) => {
+  if (!event.data?.data) {
+    console.error('No data in CloudEvent');
     return;
   }
 
-  // If this was a GCS notification:
+  const messageStr = Buffer.from(event.data.data, 'base64').toString();
+  
+  let payload: GCSNotificationPayload;
+  try {
+    payload = JSON.parse(messageStr) as GCSNotificationPayload;
+  } catch (err) {
+    console.error("Invalid JSON payload", messageStr, err);
+    return;
+  }
+
   const bucketName = payload.bucket;
   const fileName = payload.name;
   
@@ -39,31 +62,24 @@ functions.cloudEvent('processVideoResults', async (cloudEvent) => {
     return;
   }
 
-  // Filename is like "video-analysis/{assetId}.json"
   const assetId = fileName.split('/').pop()?.replace('.json', '');
   if (!assetId) return;
 
-  console.log(\`Processing video results for asset: \${assetId}\`);
+  console.log(`Processing video results for asset: ${assetId}`);
 
   try {
     const adminPb = await getAdminClient();
 
-    // Download the JSON results
     const [fileContents] = await storage.bucket(bucketName).file(fileName).download();
-    const results = JSON.parse(fileContents.toString('utf-8'));
+    const results = JSON.parse(fileContents.toString('utf-8')) as VideoAnnotationResults;
 
-    // Extract segments and labels
     const annotations = results.annotationResults?.[0];
     const shots = annotations?.shotAnnotations || [];
     const labels = annotations?.segmentLabelAnnotations || [];
 
-    // In a full implementation, you would extract keyframes from the shots
-    // and generate pHashes for each keyframe here.
-    // For MVP, we save the segment metadata back to the asset.
-
     const metadataUpdate = {
       shots: shots.length,
-      topLabels: labels.slice(0, 5).map((l: any) => l.entity.description),
+      topLabels: labels.slice(0, 5).map((l) => l.entity.description),
       videoProcessedAt: new Date().toISOString()
     };
 
@@ -72,7 +88,7 @@ functions.cloudEvent('processVideoResults', async (cloudEvent) => {
       metadata: metadataUpdate
     });
 
-    console.log(\`Successfully processed video results for \${assetId}\`);
+    console.log(`Successfully processed video results for ${assetId}`);
   } catch (error) {
     console.error('Error processing video results:', error);
     try {

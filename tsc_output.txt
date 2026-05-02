@@ -1,0 +1,8 @@
+app/api/assets/route.ts(40,25): error TS1127: Invalid character.
+app/api/assets/route.ts(40,26): error TS1134: Variable declaration expected.
+app/api/assets/route.ts(103,1): error TS1005: '}' expected.
+app/api/assets/route.ts(103,1): error TS1160: Unterminated template literal.
+functions/process-asset/index.ts(43,15): error TS1127: Invalid character.
+functions/process-asset/index.ts(99,1): error TS1160: Unterminated template literal.
+functions/process-video-results/index.ts(46,15): error TS1127: Invalid character.
+functions/process-video-results/index.ts(89,1): error TS1160: Unterminated template literal.

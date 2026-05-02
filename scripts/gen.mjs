@@ -1,9 +1,9 @@
-const {
+import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   HeadingLevel, AlignmentType, BorderStyle, WidthType, ShadingType,
-  LevelFormat, PageBreak, Footer, TabStopType, TabStopPosition, PageNumber
-} = require('docx');
-const fs = require('fs');
+  LevelFormat, PageBreak, Footer, TabStopType, TabStopPosition
+} from 'docx';
+import fs from 'fs';
 
 // Color palette
 const C = {

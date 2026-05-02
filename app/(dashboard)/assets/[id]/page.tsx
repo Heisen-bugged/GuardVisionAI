@@ -11,25 +11,34 @@ import {
   ShieldCheck, 
   Fingerprint, 
   Globe, 
-  History, 
   AlertTriangle,
   Download,
   ExternalLink,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
+
+interface Asset {
+  id: string;
+  title: string;
+  asset_type: 'image' | 'video' | 'clip';
+  created: string;
+  phash?: string;
+  keywords?: string[];
+  licensed_domains?: string[];
+}
 
 export default function AssetDetailPage() {
   const { id } = useParams();
-  const [asset, setAsset] = useState<any>(null);
+  const [asset, setAsset] = useState<Asset | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchAsset() {
       try {
-        // In a real app, this would be /api/assets/[id]
         const res = await fetch(`/api/assets?org_id=demo-org-123`);
         const data = await res.json();
-        const found = data.items.find((a: any) => a.id === id);
+        const found = data.items.find((a: Asset) => a.id === id);
         setAsset(found);
       } catch (error) {
         console.error('Error fetching asset:', error);
@@ -197,8 +206,4 @@ export default function AssetDetailPage() {
       </div>
     </div>
   );
-}
-
-function RefreshCw({ className, size }: { className?: string, size?: number }) {
-  return <Loader2 className={className} size={size} />;
 }

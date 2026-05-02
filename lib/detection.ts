@@ -5,9 +5,19 @@ import { generatePHash } from './processing';
 const youtube = google.youtube('v3');
 const VISION_URL = 'https://vision.googleapis.com/v1/images:annotate';
 
+interface Asset {
+  id: string;
+  title: string;
+  keywords?: string[];
+  asset_type: 'image' | 'video' | 'clip';
+  gcs_original_url?: string;
+  licensed_domains?: string[];
+  phash?: string;
+}
+
 export async function runYouTubeCrawler(assetId: string) {
   const pb = await getAdminClient();
-  const asset = await pb.collection('assets').getOne(assetId);
+  const asset = await pb.collection('assets').getOne(assetId) as unknown as Asset;
   const keywords = asset.keywords || [];
 
   console.log(`Starting YouTube crawl for asset: ${asset.title}`);
@@ -38,7 +48,7 @@ export async function runYouTubeCrawler(assetId: string) {
             sourceUrl: `https://www.youtube.com/watch?v=${videoId}`,
             platform: 'youtube',
             mediaBuffer: thumbBuffer,
-            metadata: item,
+            metadata: item as unknown as Record<string, unknown>,
           });
         }
       }
@@ -50,7 +60,7 @@ export async function runYouTubeCrawler(assetId: string) {
 
 export async function runWebDetection(assetId: string) {
   const pb = await getAdminClient();
-  const asset = await pb.collection('assets').getOne(assetId);
+  const asset = await pb.collection('assets').getOne(assetId) as unknown as Asset;
   
   if (asset.asset_type !== 'image') return;
 
@@ -109,13 +119,13 @@ async function matchAndReportViolation({
   confidence, 
   metadata 
 }: {
-  asset: any;
+  asset: Asset;
   sourceUrl: string;
   platform: string;
   mediaBuffer?: Buffer;
   matchType?: string;
   confidence?: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }) {
   const pb = await getAdminClient();
 
@@ -127,7 +137,7 @@ async function matchAndReportViolation({
   let finalMatchType = matchType || 'semantic';
 
   // 2. Perform deep matching if buffer is provided
-  if (mediaBuffer) {
+  if (mediaBuffer && asset.phash) {
     try {
       // Perceptual Hashing
       const discoveredPHash = await generatePHash(mediaBuffer);

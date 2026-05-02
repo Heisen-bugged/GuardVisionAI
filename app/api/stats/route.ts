@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/pocketbase';
 
+interface PocketBaseError {
+  status: number;
+  message: string;
+  response?: unknown;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -90,19 +96,21 @@ export async function GET(req: NextRequest) {
       platformData,
       recentActivity: recentActivity.items,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Stats API Error:', error);
     
+    const pbError = error as PocketBaseError;
+    
     // Check if it's a PocketBase error
-    if (error.status === 0) {
+    if (pbError.status === 0) {
       return NextResponse.json({ 
         error: 'Could not connect to PocketBase. Please ensure it is running on ' + (process.env.POCKETBASE_URL || 'http://127.0.0.1:8090')
       }, { status: 503 });
     }
 
     return NextResponse.json({ 
-      error: error.message || 'An unexpected error occurred',
-      details: error.response || null
-    }, { status: error.status || 500 });
+      error: pbError.message || 'An unexpected error occurred',
+      details: pbError.response || null
+    }, { status: pbError.status || 500 });
   }
 }

@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     const result = await verifyWatermark(buffer, type);
     return NextResponse.json(result);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'An unknown error occurred' }, { status: 500 });
   }
 }

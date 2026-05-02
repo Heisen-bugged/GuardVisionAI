@@ -9,10 +9,7 @@ import {
   CheckCircle2, 
   Scan,
   TrendingUp,
-  Video,
   Globe,
-  Instagram,
-  Twitter
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -27,8 +24,29 @@ import {
   Cell
 } from 'recharts';
 
+interface Stats {
+  totalAssets: number;
+  openViolations: number;
+  scansToday: number;
+  resolvedThisWeek: number;
+  trendData: Array<{ name: string; violations: number }>;
+  platformData: Array<{ name: string; value: number }>;
+  recentActivity: Array<{
+    id: string;
+    source_url: string;
+    created: string;
+    platform: string;
+    confidence: number;
+    expand?: {
+      asset_id?: {
+        title: string;
+      };
+    };
+  }>;
+}
+
 export default function DashboardPage() {
-  const [stats, setStats] = useState<any>({
+  const [stats, setStats] = useState<Stats>({
     totalAssets: 0,
     openViolations: 0,
     scansToday: 0,
@@ -49,9 +67,9 @@ export default function DashboardPage() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to fetch stats');
         setStats(data);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to fetch stats:', err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
       } finally {
         setLoading(false);
       }
@@ -72,7 +90,7 @@ export default function DashboardPage() {
     <div className="space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl font-bold font-outfit tracking-tight">Welcome back, <span className="text-premium">Sports Admin</span></h1>
-        <p className="text-slate-400 font-medium">Here's what's happening with your protected assets today.</p>
+        <p className="text-slate-400 font-medium">Here&apos;s what&apos;s happening with your protected assets today.</p>
       </div>
 
       {error && (
@@ -170,7 +188,7 @@ export default function DashboardPage() {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {stats.platformData.map((entry: any, index: number) => (
+                    {stats.platformData.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
                     ))}
                   </Pie>
@@ -181,7 +199,7 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             </div>
             <div className="grid grid-cols-2 gap-4 mt-4">
-              {stats.platformData.map((p: any, index: number) => (
+              {stats.platformData.map((p, index) => (
                 <div key={p.name} className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full shadow-[0_0_8px_var(--color-p)]" style={{ backgroundColor: COLORS[index % COLORS.length], '--color-p': COLORS[index % COLORS.length] } as React.CSSProperties} />
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{p.name}</span>
@@ -204,7 +222,7 @@ export default function DashboardPage() {
                 No recent activity detected.
               </div>
             ) : (
-              stats.recentActivity.map((activity: any) => (
+              stats.recentActivity.map((activity) => (
                 <div key={activity.id} className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-800/50 transition-colors group">
                   <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0 border border-blue-500/10 group-hover:scale-110 transition-transform">
                     <Scan size={20} />
@@ -216,7 +234,7 @@ export default function DashboardPage() {
                         {(() => {
                           try {
                             return new URL(activity.source_url).hostname;
-                          } catch (e) {
+                          } catch (_e) {
                             return activity.source_url || 'Unknown Source';
                           }
                         })()}

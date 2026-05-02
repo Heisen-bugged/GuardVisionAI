@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "pb_data/**",
+    "pb_migrations/**",
   ]),
 ]);
 

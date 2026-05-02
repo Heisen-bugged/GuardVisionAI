@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { 
   ShieldCheck, 
   Upload, 
-  Search, 
   Loader2, 
   CheckCircle2, 
   XCircle, 
@@ -16,11 +15,17 @@ import {
   FileSearch
 } from 'lucide-react';
 
+interface VerificationResult {
+  verdict: 'WATERMARK_DETECTED' | 'NOT_DETECTED' | string;
+  confidence: number;
+  error?: string;
+}
+
 export default function VerifyPage() {
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState('');
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<VerificationResult | null>(null);
 
   const handleVerify = async () => {
     if (!file && !url) return;
@@ -42,7 +47,7 @@ export default function VerifyPage() {
       setResult(data);
     } catch (error) {
       console.error('Verification failed:', error);
-      setResult({ error: 'Failed to verify content.' });
+      setResult({ verdict: 'ERROR', confidence: 0, error: 'Failed to verify content.' });
     } finally {
       setLoading(false);
     }

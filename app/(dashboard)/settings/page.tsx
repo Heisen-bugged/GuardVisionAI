@@ -25,7 +25,7 @@ export default function SettingsPage() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div>
         <h1 className="text-3xl font-bold font-outfit">Organization Settings</h1>
-        <p className="text-slate-400">Manage your organization's protection parameters and API configurations.</p>
+        <p className="text-slate-400">Manage your organization&apos;s protection parameters and API configurations.</p>
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">

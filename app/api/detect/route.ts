@@ -4,7 +4,7 @@ import { getAdminClient } from '@/lib/pocketbase';
 
 export async function POST(req: NextRequest) {
   try {
-    const { asset_id, force } = await req.json();
+    const { asset_id } = await req.json();
 
     if (!asset_id) {
       return NextResponse.json({ error: 'asset_id is required' }, { status: 400 });
@@ -32,16 +32,16 @@ export async function POST(req: NextRequest) {
           status: 'completed',
           completed_at: new Date().toISOString(),
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         await pb.collection('detection_jobs').update(job.id, {
           status: 'failed',
-          error_log: err.message,
+          error_log: err instanceof Error ? err.message : 'An unknown error occurred',
         });
       }
     })();
 
     return NextResponse.json(job);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'An unknown error occurred' }, { status: 500 });
   }
 }

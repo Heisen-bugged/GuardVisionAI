@@ -13,17 +13,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  AlertTriangle, 
   ExternalLink, 
   CheckCircle, 
-  XCircle, 
   Video, 
   Globe, 
   MoreHorizontal,
-  Bell
+  Bell,
+  ShieldCheck
 } from 'lucide-react';
 import { pb } from '@/lib/pocketbase';
-import Link from 'next/link';
 
 interface Violation {
   id: string;
@@ -64,7 +62,6 @@ export default function ViolationsPage() {
     pb.collection('violations').subscribe('*', (e) => {
       if (e.action === 'create') {
         setViolations(prev => [e.record as unknown as Violation, ...prev]);
-        // In a real app, you'd show a toast here
       } else if (e.action === 'update') {
         setViolations(prev => prev.map(v => v.id === e.record.id ? e.record as unknown as Violation : v));
       }
@@ -105,7 +102,7 @@ export default function ViolationsPage() {
     return 'text-blue-500';
   };
 
-  const updateStatus = async (id: string, status: string) => {
+  const updateStatus = async (id: string, status: Violation['status']) => {
     try {
       await fetch('/api/violations', {
         method: 'PATCH',
@@ -113,7 +110,7 @@ export default function ViolationsPage() {
         body: JSON.stringify({ id, status }),
       });
       // Local update will happen via SSE if configured, or manually here
-      setViolations(prev => prev.map(v => v.id === id ? { ...v, status: status as any } : v));
+      setViolations(prev => prev.map(v => v.id === id ? { ...v, status } : v));
     } catch (err) {
       console.error('Failed to update status:', err);
     }
@@ -237,8 +234,4 @@ export default function ViolationsPage() {
       </Card>
     </div>
   );
-}
-
-function ShieldCheck({ className, size }: { className?: string, size?: number }) {
-  return <CheckCircle className={className} size={size} />;
 }

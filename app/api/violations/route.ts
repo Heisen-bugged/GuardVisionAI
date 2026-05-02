@@ -31,21 +31,21 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(resultList);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'An unknown error occurred' }, { status: 500 });
   }
 }
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { id, status, note } = await req.json();
+    const { id, status, _note } = await req.json();
     const pb = await getAdminClient();
     const record = await pb.collection('violations').update(id, {
       status,
       // note would go into metadata or a separate notes field
     });
     return NextResponse.json(record);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'An unknown error occurred' }, { status: 500 });
   }
 }
