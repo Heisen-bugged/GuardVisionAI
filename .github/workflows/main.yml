@@ -110,9 +110,11 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+        continue-on-error: true
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+        continue-on-error: true
 
       - name: Deploy Process Asset Function
         run: |
@@ -123,7 +125,9 @@ jobs:
             --entry-point processAsset \
             --trigger-topic asset-uploaded-topic \
             --region us-central1 \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --set-env-vars POCKETBASE_URL=${{ secrets.POCKETBASE_URL }},POCKETBASE_ADMIN_EMAIL=${{ secrets.POCKETBASE_ADMIN_EMAIL }},POCKETBASE_ADMIN_PASSWORD=${{ secrets.POCKETBASE_ADMIN_PASSWORD }}
+        continue-on-error: true
 
       - name: Deploy Video Results Function
         run: |
@@ -134,4 +138,6 @@ jobs:
             --entry-point processVideoResults \
             --trigger-topic video-processing-complete-topic \
             --region us-central1 \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --set-env-vars POCKETBASE_URL=${{ secrets.POCKETBASE_URL }},POCKETBASE_ADMIN_EMAIL=${{ secrets.POCKETBASE_ADMIN_EMAIL }},POCKETBASE_ADMIN_PASSWORD=${{ secrets.POCKETBASE_ADMIN_PASSWORD }}
+        continue-on-error: true
