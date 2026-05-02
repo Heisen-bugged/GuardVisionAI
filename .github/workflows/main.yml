@@ -55,6 +55,9 @@ jobs:
         with:
           version: 9
 
+      - name: Install dependencies
+        run: pnpm install
+
       # 1. Setup Vercel Project (Connect Git & Env Vars)
       - name: Install Vercel CLI
         run: pnpm install --global vercel@latest
@@ -74,7 +77,9 @@ jobs:
           vercel env add POCKETBASE_URL production --token=${{ secrets.VERCEL_TOKEN }} < pb_url.txt
 
       - name: Build Project Artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --build-env NEXT_PUBLIC_POCKETBASE_URL="http://130.61.153.164:8090"
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          NEXT_PUBLIC_POCKETBASE_URL: "http://130.61.153.164:8090"
 
       - name: Deploy Project Artifacts to Vercel
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
